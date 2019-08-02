@@ -1,0 +1,109 @@
+//Buffer de tamaño 1:
+
+monitor Buffer(){
+	private Object data;
+	private Condition hayEspacio;
+	private Condition hayDato;
+
+	public Buffer(){
+		data = null;
+		hayEspacio = new Condition();
+		hayDato = new Condition();
+	}
+
+	public void write(Object o){
+		while(this.isThereData()){
+			hayEspacio.wait();
+		}
+		data = o;
+		hayDato.notify();
+	}
+
+	public Object read(){
+		while(this.isNotThereData()){
+			hayDato.wait();
+		}
+		Object result = data;
+		data = null;
+		hayEspacio.notify();
+		return result;
+	}
+
+	private Boolean isThereData(){
+		data != null;	
+	}
+
+	private Boolean isNotThereData(){
+		return !this.isThereData();
+	}  
+
+}
+
+
+// Buffer de tamaño N:
+
+monitor Buffer(){
+	private Stack data;
+	private Condition hayEspacio;
+	private Condition hayDato;
+
+	public Buffer(Int capacity){
+		data = new Stack(capacity);
+		hayEspacio = new Condition();
+		hayDato = new Condition();
+	}
+
+	public void write(Object o){
+		while(this.isThereData()){
+			hayEspacio.wait();
+		}
+		data.push(o);
+		hayDato.notifyAll();
+	}
+
+	public Object read(){
+		while(this.isNotThereData()){
+			hayDato.wait();
+		}
+		Object result = data.pop();
+		data = null;
+		hayEspacio.notifyAll();
+		return result;
+	}
+
+	private Boolean isThereData(){
+		data objects.size();	
+	}
+
+	private Boolean isNotThereData(){
+		return objects.size() == 0 ;
+	}  
+}
+
+
+//Monitor Semaforo:
+
+
+monitor Semaforo(){
+	private Int permisos;
+	private Condition esperaPermisos = new Condition();	
+	
+	public Semaforo(Int quantity){
+		permisos = quantity;
+		monitor Semaforo(){
+		esperaPermisos = new Condition();	
+	}
+
+	public void acquire(){
+		while(permisos ==0){
+			esperaPermisos.wait();
+		}
+		permisos --;		
+	}
+
+	public void release(){
+		permisos++;
+		esperaPermisos.notify();
+	}
+
+} 

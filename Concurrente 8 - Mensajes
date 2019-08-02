@@ -1,0 +1,61 @@
+process P(canal1, canal2, canal3, canal4):{
+	while(true){
+		request = canal3.receive();
+		canal1.send(request);
+		response = canal2.receive();
+		canal4.send(response);
+	}
+}
+
+process P(canal1, canal2, canal3, canal4, N):{
+	Channel permisos = new Channel();
+	repeat(N){
+		permisos.send("");
+	}
+
+		Thread PtoS(canal1, canal3, permisos){
+			while(true){
+				permisos.receive();
+				request = canal3.receive();
+				canal1.send(request);
+			}
+		}
+
+		Thread PtoC(canal2, canal4, permisos){
+			while(true){
+				response = canal2.receive();
+				canal4.send(response);
+				permisos.send("");
+			}
+		}
+	}
+}
+
+
+process P(canal1, canal2, canal3, canal4, canal11, canal22):{
+	Channel responses = new Channel();
+	Channel permisos = new Channel();
+	repeat(N){
+		permisos.send(0);
+		permisos.send(1);
+	}
+		Thread PtoS(canal1, canal11, canal3, permisos, responses){
+			while(true){
+				resolver = permisos.receive();
+				responses.send(resolver);
+				request = canal3.receive();
+				channelToS = (resolver == 0) ? canal1 : canal11
+				channelToS.send(request);
+			}
+		}
+
+		Thread PtoC(canal2, canal22, canal4, permisos, responses){
+			while(true){
+				resolver = responses.receive();
+				channelToWaitResponse = (resolver == 0) ? canal2 : canal22;
+				response = channelToWaitResponse.receive();
+				canal4.send(response);
+				permisos.send(resolver);
+			}
+		}
+}

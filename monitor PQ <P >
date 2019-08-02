@@ -1,0 +1,125 @@
+monitor PQ <P > {
+// Agrega un elemento con prioridad
+void enqueue ( P e ) {...}
+
+// Remueve el elemento de mayor prioridad
+P dequeue () {...}
+
+// Retorna el elemento de mayor prioridad ( o null si es vacia )
+P peek () {...}
+
+// Indica si hay un elemento con prioridad p
+boolean has ( int p ) {...}
+}
+Extienda el monitor PQ considerando la siguiente funcionalidad (Ayuda: recuerde que
+puede invocar los métodos originales del monitor utilizando el keyword super), y no
+olvide indicar claramente todos los métodos que se ven afectados por los cambios
+introducidos:
+
+
+--//Version menos eficientes://
+
+a) Agregar un método P dequeue(int p) que sólo remueve un elemento por encima
+de una prioridad p. Es decir, si el valor de prioridad del tope del queue es menor
+que p el método debe bloquearse hasta que esta condición se cumpla.
+
+monitor PQ.A extends PQ<P>():{
+	private Condition noPriority = new Condition();
+
+	public P dequeue(int p){
+		while(super.peek() != null && !super.peek().priority() < p){
+			noPriority.wait();
+		}
+		return super.dequeue(p);
+	}
+
+	public void enqueue(P e){
+		super.enqueue(e);
+		noPriority.notifyAll();
+	}
+
+	//Los metodos que no estan, se asumen que son del tipo:
+	
+	// 		public TipoRetorno xxxx(){
+	// 			return super.xxxx();	
+	//		}
+}
+
+
+b) Modifique su solución anterior de forma tal que el método enqueue se bloquee
+mientras se intente insertar un elemento con la misma prioridad que otro ya
+encolado.
+
+monitor PQ.B extends PQ<P>():{
+	private Condition noPriority = new Condition();
+	private Condition hasPriority = new Condition(); 
+
+	public P dequeue(int p){
+		while(super.peek != null && !this.peek().priority() < p){
+			noPriority.wait();
+		}
+		hasPriority.notifyAll();
+		return super.dequeue(p);
+	}
+
+	public void enqueue(P e){
+		while(super.has(e.priority())){
+			hasPriority.wait();
+		}
+		super.enqueue(e);
+		noPriority.notifyAll();
+	}
+
+	//Los metodos que no estan, se asumen que son del tipo:
+	
+	// 		public TipoRetorno xxxx(){
+	// 			return super.xxxx();	
+	//		}	
+}
+
+
+c) Extienda el punto anterior con un método P peek(int p) que retorna (sin remo-
+ver) el primer elemento del queue si su prioridad es p, en caso contrario el método
+debe bloquearse hasta que esto se cumpla (i.e., nunca debe retornar null).
+
+monitor PQ.C extends PQ<P>():{
+	private Condition noPriority = new Condition();
+	private Condition noHasPriority = new Condition(); 
+	private Condition noPeekPriority = new Condition(); 
+
+	public P dequeue(int p){
+		while(super.peek != null && !this.peek().priority() < p){
+			noPriority.wait();
+		}
+		noHasPriority.notifyAll();
+		noPeekPriority.notifyAll();
+		return super.dequeue(p);
+	}
+
+	public void enqueue(P e){
+		while(super.has(e.priority())){
+			noHasPriority.wait();
+		}
+		super.enqueue(e);
+		noPeekPriority.notifyAll();
+		noPriority.notifyAll();
+	}
+
+
+	public P peek(int p){
+		while(super.peek != null && this.peek().priority() != p){
+			noPeekPriority.wait();
+		}
+		return super.peek();
+	}
+
+	//Los metodos que no estan, se asumen que son del tipo:
+	
+	// 		public TipoRetorno xxxx(){
+	// 			return super.xxxx();	
+	//		}	
+}
+
+
+
+

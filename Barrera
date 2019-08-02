@@ -1,0 +1,20 @@
+public class Barrera{
+	private int cupo;
+	
+	public  Barrera(int capacidad){
+		cupo = capacidad;
+	}
+
+	public synchronized void esperar(){
+		cupo--;
+		while(cupo > 0){
+			try{
+				wait();
+			}
+			catch (Exception e){
+				//Nada	
+			};
+			notifyAll();	
+		}
+	}
+}

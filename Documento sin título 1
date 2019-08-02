@@ -1,0 +1,191 @@
+process T (tCh, kCh):{
+	Channel obj = new Channel();
+	While(true){
+		obj.send(tCh.receive());
+		Thread (obj):{
+			<msj, chDestino, chRemitente> = obj.receive();
+			Channel myChannel = new Channel();
+			chRemitente.send(myChannel);
+			destinatario = chDestino;
+			while(true){
+				<msj, chDestino, chRemitente> = myChannel.receive();
+				if(chDestino != null){
+					destinatario = chDestino;
+				}
+				else{
+					Channel key = new Channel();
+					kCh.send(key);
+					destinatario.send(codificar(key.receive(), msj))
+				}
+			}
+		}
+	}
+}
+
+
+
+process Postor(subastaCh, winCh, monto):{
+	Channel myChannel = new Channel();
+	subastaCh.send(<myChannel, monto>);
+	if(myChannel.receive()){
+		winCh.send(monto);
+	}	
+}
+
+process Martillero(subastaCh, N):{
+	Double winMonto = null;
+	Channel winner = null;
+	while(true){
+		repeat(n){
+			<ch, monto> = subastaCh.receive();
+			if(winner == null){
+				winner = ch;
+				winMonto = monto;	
+			}
+			else{
+				if(winMonto < monto){
+					winMonto = monto;
+					winner.send(false);
+					winner = ch;
+
+				}
+				else{
+					ch.send(false);
+				}
+			}
+		}
+		winner.send(true);
+	}
+}
+
+process Postor(subastaCh, winCh, monto):{
+	Channel myChannel = new Channel();
+	subastaCh.send(<myChannel, monto>);
+	while(){
+		if(myChannel.receive()){
+			winCh.send(monto);
+		}
+	}	
+}
+
+monitor SecuenciadorTernario(){ 
+	private Int count = 0;
+	private Condition primero = new Condition();
+	private Condition segundo = new Condition();
+	private Condition tercero = new Condition();
+	
+	public void primero(){
+		while(count != 0){
+			primero.wait();
+		}
+		count = count + 1 % 3
+		segundo.notify();
+	}
+
+	public void segundo(){
+		while(count != 1){
+			segundo.wait();
+		}
+		count = count + 1 % 3
+		tercero.notify();
+	}
+
+	
+	public void tercero(){
+		while(count != 2){
+			tercero.wait();
+		}
+		count = count + 1 % 3
+		primero.notify();
+	}
+}
+
+
+
+
+grid.startConsuming();
+	sleep(1h);
+	grid.stopConsuming();
+	grid.startProducing();
+	sleep(2h);
+	grid.stopProducing();
+
+Los usuarios siempre pueden comportarse como productores, pero sólo pueden comportarse como consumidores si hay una cantidad igual o mayor de productores. Además se debe garantizar que un productor no puede dejar de producir si no hay capacidad ociosa en la red, es decir, no puede dejar de producir si al hacerlo algún consumidor quedaría sin suministro
+
+
+
+monitor Grid():{
+	private Int consumers = 0;
+	private Int produsers = 0;
+	private Condition hayEnergia = new Condition();
+
+
+	public void startProducing(){
+		producers++;	
+		hayEnergia.notify();  	
+	}
+	
+	public void stopProducing(){
+		while(consumers == producers){
+			hayEnergia.wait();
+		}
+		producers--;
+	}
+
+
+	public void startConsuming(){
+		while(consumers > producers){
+			hayEnergia..wait();
+		}
+		consumers++;
+	
+	}
+
+	public void stopConsuming(){
+		consumers--;
+		hayEnergia.notify();
+	}
+}
+
+b) Modifique su solución de forma tal que los usuarios no puedan comportarse como productores si la red tiene más de N productores ociosos, es decir, que el cambio a productor genere una espera mientras haya al menos N productores más que consumidores. 
+
+
+
+monitor Grid(N):{
+	private Int consumers = 0;
+	private Int produsers = 0;
+	private Condition hayEnergia = new Condition();
+	private Condition hayProductores = new Condition();
+
+	public void startProducing(){
+		while(producers - consumers >= N){
+			hayProductores.wait();
+		}
+		producers++;	
+		hayEnergia.notify();  	
+	}
+	
+	public void stopProducing(){
+		while(consumers == producers){
+			hayEnergia.wait();
+		}
+		producers--;
+		hayProductores.notify();
+	}
+
+
+	public void startConsuming(){
+		while(consumers > producers){
+			hayEnergia..wait();
+		}
+		consumers++;
+	
+	}
+
+	public void stopConsuming(){
+		consumers--;
+		hayEnergia.notify();
+	}
+}
+
+

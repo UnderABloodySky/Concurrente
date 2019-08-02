@@ -1,0 +1,29 @@
+Process Server(aChannelToRead){
+  Prívate Int sigue;
+  Prívate Channel read;
+
+  Public Server(Channel aChannelToRead){
+    read = aChannelToRead;
+    sigue = 0;
+  }i
+ 
+  Public read(){
+    while(true){
+	String message = read.receive();
+	this.evaluate(message);
+    }	
+  }
+
+  Public void evaluate(String _message){
+	if(_message == "sigue"){
+		sigue++;
+	}
+	if(_message == "cuenta"){
+		Int quantity = sigue;
+		sigue = 0;
+		System.out.println(quantity);		
+	}
+  }
+}
+
+

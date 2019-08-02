@@ -1,0 +1,228 @@
+monitor ConcurMap.A<K, V>():{
+	private Map<K, V> objs = Map<K, v>();
+	private Condition noKey = new Condition();  
+
+	public V get(K k){
+		while(!obj.contains(k)){
+			 noKey.wait();
+		}
+		return objs.get(k);ains
+	}
+
+	public void put(K k, V v){
+		obj.put(k, v);
+		noKey.notifyAll();
+	}
+
+	public Boolean contains(K k){
+		return objs.contains(k);
+	}
+
+	public void remove(K k){
+		objs.remove(k);
+	} 
+}
+
+monitor ConcurMap.B<K, V>():{
+	private Map<K, V> objs = Map<K, v>();
+	private Condition noKey = new Condition();  
+	private Condition missingKey = new Condition();
+	
+	public V get(K k){
+		while(!obj.contains(k)){
+			 noKey.wait();
+		}
+		return objs.get(k);
+	}
+
+	public void put(K k, V v){
+		while(objs.contains(k)){
+			missingKey.wait();
+		}
+		obj.put(k, v);
+		noKey.notifyAll();
+	}
+
+	public Boolean contains(K k){
+		return objs.contains(k);
+	}
+
+	public void remove(K k){
+		objs.remove(k);
+		missingKey.notifyAll();
+	} 
+}
+
+
+monitor ConcurMap.C<K, V>():{
+	private Map<K, V> objs = Map<K, v>();
+	private Map<K, Condition> get = Map<K, Condition>();
+	private Map<K, Condition> put = Map<K, Condition>();
+	
+	public V get(K k){
+		if(!get.contains(k)){
+			Condition noKey = new Condition();	
+			get.put(k, noKey);
+		}
+		while(!objs.contains(k)){
+ 			get.get(k).wait();
+		}
+		get.get(k).notify();
+		return objs.get(k);
+	}
+
+	public void put(K k, V v){
+		if(!put.contains(k)){
+			Condition noKey = new Condition();	
+			put.put(k, noKey);
+		}
+		while(objs.contains(k)){
+			put.get(k).wait();
+		}
+		obj.put(k, v);
+		get.get(k).notify();
+	}
+
+	public Boolean contains(K k){
+		return objs.contains(k);
+	}
+
+	public void remove(K k){
+		objs.remove(k);
+		put.get(k).notify();
+	} 
+}
+
+
+
+
+
+
+
+
+
+
+
+//A
+
+process Agente(Int id, Channel proxyCh){
+	while(true){
+		proxyCh.send(id);
+		sleep(1m);
+	}	
+}
+
+process Proxy(Int id, Channel proxyCh, Channel serverCh){
+	while(true){
+		serverCh.send(proxyCh.receive()); 
+	}
+}
+
+process Server(Channel serverChannel){
+	while(true){
+		(serverCh.receive());
+	}
+}
+
+
+//B:
+// Con cuello de botella:
+
+process Agente(Int id, Channel proxyCh){
+	Channel agentCh = new Condition();
+	Int myId = id; 
+	while(true){
+		proxyCh.send(<myId, agentCh>);
+		myId += agentCh.receive();
+		sleep(1m);
+	}	
+}
+
+process Proxy(Int id, Channel proxyCh, Channel serverCh){
+	while(true){
+		<id, agentCh> = proxyCh.receive();
+		Channel reponseCh = new Channel();
+		serverCh.send(<responseCh, id>);
+		Int rand = response.receive();
+		agentCh.send(rand);	
+	}
+}
+
+process Server(Channel serverChannel){
+	while(true){
+		<responseCh, id> = serverCh.receive();
+		Int rand = Random();
+		responseCh.send(rand); 		
+		print(id);
+	}
+}
+
+
+//B:
+// Sin cuello de botella:
+
+process Agente(Int id, Channel proxyCh){
+	Channel agentCh = new Condition();
+	Int myId = id; 
+	while(true){
+		proxyCh.send(<myId, agentCh>);
+		myId += agentCh.receive();
+		sleep(1m);
+	}	
+}
+
+process Proxy(Int id, Channel proxyCh, Channel serverCh, Channel testChannel){
+	while(true){
+		<id, agentCh> = proxyCh.receive();
+		Thread (<id, agentCh>, serverCh, testChannel):{
+			Channel reponseCh = new Channel();
+			serverCh.send(<responseCh, id>);
+			Int rand = response.receive();
+			agentCh.send(rand);	
+		}
+	}
+}
+
+process Server(Channel serverChannel){
+	while(true){
+		<responseCh, id> = serverCh.receive();
+		Int rand = Random();
+		responseCh.send(rand); 		
+		print(id);
+	}
+}
+
+//C:
+process Server(Channel serverChannel, Channel timeOut){
+	while(true){
+		<responseCh, id> = serverCh.receive();
+		Int rand = Random();
+		responseCh.send(rand);
+		print(id);
+	}
+
+    Thread(timeOut){
+        while(true){
+            timeOut.send(false);
+            sleep(2m);
+            if(!timeOut.receive()){
+	            print("hubo Actividad");            
+            }
+        }
+    }
+}
+
+
+process Proxy(Int id, Channel proxyCh, Channel serverCh, Channel timeOut){
+	while(true){
+		<id, agentCh> = proxyCh.receive();
+		Thread (<id, agentCh>, serverCh, testChannel):{
+			Channel reponseCh = new Channel();
+			serverCh.send(<responseCh, id>);
+			testChannel.receive();
+			timeOut.send(true)
+			Int rand = response.receive();
+			agentCh.send(rand);	
+		}
+	}
+}

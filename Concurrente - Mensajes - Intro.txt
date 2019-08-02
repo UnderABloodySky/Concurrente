@@ -1,0 +1,208 @@
+//P3 muestra la suma de de los resultados que procesan P1 y P2 
+
+global Channel c1 = new Channel ();
+global Channel c2 = new Channel ();
+
+process P1: {
+	x = c1.receive();
+	// r1 = computo costoso
+	// en funcion de x
+	c1.send(r1);
+}
+
+
+process P2: {
+	y = c1.receive();
+	// r2 = computo costoso
+	// en funcion de y
+	c1.send(r2);
+}
+
+//P3 podria recoger el mismo valor de X o Y que puso en el canal 
+process P3 : {
+	c1.send(X);
+	c2.send(Y);
+	r1 = c1.receive();
+	r2 = c2.receive();
+	print (r1 + r2);
+}
+
+global Channel c3 = new Channel ();
+global Channel c4 = new Channel ();
+
+// Se resuelve el problema anterior:
+process P3.2 : {
+	c1.send(X);
+	c2.send(Y);
+	r1 = c3.receive();
+	r2 = c4.receive();
+	print(r1 + r2);
+}
+
+process P1: {
+	x = c1.receive();
+	// r1 = computo costoso
+	// en funcion de x
+	c3.send(r1);
+}
+
+
+process P2: {
+	y = c1.receive();
+	// r2 = computo costoso
+	// en funcion de y
+	c4.send(r2);
+}
+
+
+
+// Escribir dos procesos A y B, el primero genera un número
+// aleatorio y se lo envı́a al segundo que al recibirlo lo muestra
+// por pantalla.
+
+
+global Channel bc = new Channel ();
+
+process A:{
+	Int n = random();
+	bc.send(n);
+}
+
+process B:{
+	Int n = bc.receive();
+	print(n);  
+}
+
+//Extender el ejercicio anterior para que el segundo proceso lea
+//un número introducido por el usuario que indique la cantidad
+//de números aleatorios a generar. Ese valor debe ser enviado al
+//primer proceso quien debe generar la cantidad de números
+//pedida. El segundo proceso debe mostrar todos los números
+//por pantalla.
+
+global Channel bc = new Channel ();
+
+process A:{
+	Int n = ac.receive();
+	repeat(n){	
+		Int n = random();
+		bc.send(n);
+	}
+}
+
+process B:{
+	String input = ReadInput();
+	Int n = ParserInt(input);
+	ac.send(n);
+	repeat(n){
+		Int m = bc.receive();
+		print(m);  
+	}	
+}
+
+
+//extender el ejercicio anterior para admitir pedidos
+//concurrentes
+
+//Proces B queda igual
+
+process A:{
+	while(true){
+		Int n = ac.receive();
+		thread {
+			repeat(n){	
+				Int n = random();
+				bc.send(n);
+			}
+		}
+	}
+}
+
+
+//Extender el ejercicio para enviar números aleatorios
+//entre 0 y un número provisto por el cliente
+
+process A:{
+	while(true){
+		Request request = ac.receive();
+		thread(request) {
+			Int n = request.n();
+			Int f = request.f();
+			repeat(n){	
+				Int n = random() * f;
+				bc.send(n);
+			}
+		}
+	}
+}
+
+process B:{
+	String nNumeros = ReadInput();
+	String from = ReadInput();
+	Int intNNumeros = ParserInt(nNumeros);
+	Int intFrom = ParserInt(from);
+	Request request = new Request();
+	request.n(intNNumeros);
+	request.from(intFrom); 
+	ac.send(request);
+	repeat(n){
+		Int m = bc.receive();
+		print(m);  
+	}	
+}
+
+
+//Extender el ejercicio anterior para soportar 
+//n clientes
+
+process A:{
+	while(true){
+		Request request = ac.receive();
+		thread(request) {
+			Int n = request.n();
+			Int f = request.f();
+			Channel c = request.c(); 
+			repeat(n){	
+				Int n = random() * f;
+				c.send(n);
+			}
+		}
+	}
+}
+
+process B:{
+	String nNumeros = ReadInput();
+	String from = ReadInput();
+	Int intNNumeros = ParserInt(nNumeros);
+	Int intFrom = ParserInt(from);
+	Channel c = new Channel();	
+	Request request = new Request();
+	request.n(intNNumeros);
+	request.from(intFrom);
+	request.from(c); 
+	ac.send(request);
+	repeat(n){
+		Int m = bc.receive();
+		print(m);  
+	}	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

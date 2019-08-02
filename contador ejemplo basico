@@ -1,0 +1,71 @@
+public class MonitoresMain{
+	
+	public static void main(String[] args){ 
+		Contador miContador = new Contador(0);
+		Barrera miBarrera = new Barrera(4);
+		ContadorUsuario usu0 = new Contadorusuario(miContador, miBarrera)
+		ContadorUsuario usu1 = new Contadorusuario(miContador, miBarrera)
+		ContadorUsuario usu2 = new Contadorusuario(miContador, miBarrera)
+		usu0.start();
+		USU1.start();
+		usu2.start();
+		this.start();
+		
+		System.out.println("El valor del contador es: " + miContador.value());
+	}	
+}
+
+public class ContadorUsuario extends Thread{
+
+	Contador miContador;
+	Barrera miBarrera;
+
+	public ContadorUsuario(Contador elContador, Barrera laBarrera){
+		miContador = elContador;
+		miBarrera = laBarrera;	
+	}
+
+	public void run(){
+		miContador.incrementar(); 
+		miBarrera.esperar();
+	}
+}
+
+public class Barrera{
+	private int cupo;
+	
+	public  Barrera(int capacidad){
+		cupo = capacidad;
+	}
+
+	public synchronized void esperar(){
+		cupo--;
+		while(cupo > 0){
+			try{
+				wait();
+			}
+			catch (Exception e){
+				//Nada	
+			};
+			notifyAll();	
+		}
+	}
+}
+
+public Class Contador{	
+	private int contador = 0;
+
+	public Contador(int n){
+		contador = n;
+	}
+
+	public void incrementar(){
+		contador++;
+	}
+	
+	public int value(){
+		return contador;
+	}
+}
+
+
